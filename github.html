@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GitHub Developer Explorer</title>
+  <link rel="stylesheet" href="githubstyle.css">
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <div class="hero-content">
+        <span class="tag">GitHub Developer Explorer</span>
+        <h1>Search Any Developer</h1>
+        <p class="subtitle">Explore GitHub profiles, repositories, stats and language breakdown using a premium ocean-gradient interface.</p>
+
+        <form class="search-box" id="searchForm">
+          <input type="text" id="usernameInput" placeholder="Enter GitHub username, example: torvalds" autocomplete="off" />
+          <button type="submit">Explore</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="messageBox" class="message hidden"></section>
+    <section id="profileSection" class="hidden"></section>
+
+    <section id="repoSection" class="repo-section hidden">
+      <div class="repo-top">
+        <h2>Repositories</h2>
+        <select id="sortRepos">
+          <option value="stars">Sort by Stars</option>
+          <option value="name">Sort by Name</option>
+          <option value="updated">Sort by Updated</option>
+        </select>
+      </div>
+      <div id="languageBox" class="language-box"></div>
+      <div id="repoList" class="repo-list"></div>
+    </section>
+  </main>
+<script src="./githubscript.js"></script>
+</body>
+</html>
