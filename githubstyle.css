@@ -1,54 +1,57 @@
- * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: Inter, Arial, sans-serif;
-    }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Inter, Arial, sans-serif;
+}
 
-    :root {
-      --dark: #1B262C;
-      --deep: #0F4C75;
-      --mid: #3282B8;
-      --light: #BBE1FA;
-    }
+:root {
+  --dark: #1B262C;
+  --deep: #0F4C75;
+  --mid: #3282B8;
+  --light: #BBE1FA;
+}
 
-    body {
-      min-height: 100vh;
-      color: var(--light);
-      background: linear-gradient(180deg, var(--dark) 0%, var(--deep) 45%, var(--mid) 78%, var(--light) 100%);
-      overflow-x: hidden;
-    }
+body {
+  min-height: 100vh;
+  color: var(--light);
+  background: linear-gradient(180deg, var(--dark) 0%, var(--deep) 45%, var(--mid) 78%, var(--light) 100%);
+  overflow-x: hidden;
+}
 
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      background-image: radial-gradient(circle at 20% 20%, rgba(187, 225, 250, 0.16), transparent 28%), radial-gradient(circle at 80% 30%, rgba(50, 130, 184, 0.28), transparent 32%), radial-gradient(circle at 50% 90%, rgba(15, 76, 117, 0.35), transparent 35%);
-      pointer-events: none;
-      animation: bgMove 9s ease-in-out infinite alternate;
-    }
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(187, 225, 250, 0.16), transparent 28%),
+    radial-gradient(circle at 80% 30%, rgba(50, 130, 184, 0.28), transparent 32%),
+    radial-gradient(circle at 50% 90%, rgba(15, 76, 117, 0.35), transparent 35%);
+  pointer-events: none;
+  animation: bgMove 9s ease-in-out infinite alternate;
+}
 
-    .app {
-      width: min(1160px, 92%);
-      margin: auto;
-      padding: 38px 0 60px;
-      position: relative;
-      z-index: 2;
-    }
+.app {
+  width: min(1140px, 90%);
+  margin: auto;
+  padding: 42px 0 64px;
+  position: relative;
+  z-index: 2;
+}
 
-    .hero {
-      min-height: 410px;
-      display: grid;
-      place-items: center;
-      text-align: center;
-      border-radius: 34px;
-      border: 1px solid rgba(187, 225, 250, 0.22);
-      background: rgba(27, 38, 44, 0.76);
-      box-shadow: 0 35px 90px rgba(27, 38, 44, 0.75);
-      position: relative;
-      overflow: hidden;
-      animation: fadeUp 0.8s ease forwards;
-    }
+.hero {
+  min-height: 420px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  border-radius: 30px;
+  border: 1px solid rgba(187, 225, 250, 0.22);
+  background: rgba(27, 38, 44, 0.76);
+  box-shadow: 0 32px 85px rgba(27, 38, 44, 0.75);
+  position: relative;
+  overflow: hidden;
+  animation: fadeUp 0.8s ease forwards;
+}
 
     .hero::before {
       content: "";
