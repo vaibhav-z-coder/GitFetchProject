@@ -10,77 +10,8 @@ const languageBox = document.getElementById("languageBox");
 let reposData = [];
 
 const CACHE_KEY = "githubDeveloperCache";
-const CACHE_DURATION = 6 * 60 * 60 * 1000; 
-// 6 hours
-
-const demoProfileData = {
-    avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
-    login: "demo-developer",
-    name: "Demo Developer",
-    bio: "Frontend Developer | JavaScript | GitHub API Project Demo",
-    public_repos: 6,
-    followers: 120,
-    following: 45,
-    location: "India",
-    html_url: "https://github.com"
-};
-
-const demoReposData = [
-    {
-        name: "portfolio-website",
-        description: "A modern personal portfolio website using HTML, CSS and JavaScript.",
-        stargazers_count: 24,
-        forks_count: 8,
-        language: "JavaScript",
-        updated_at: "2026-06-20T10:00:00Z",
-        html_url: "https://github.com"
-    },
-    {
-        name: "expense-tracker",
-        description: "Expense tracker app with localStorage support.",
-        stargazers_count: 18,
-        forks_count: 5,
-        language: "JavaScript",
-        updated_at: "2026-06-18T10:00:00Z",
-        html_url: "https://github.com"
-    },
-    {
-        name: "github-explorer",
-        description: "A GitHub profile finder using GitHub API.",
-        stargazers_count: 32,
-        forks_count: 11,
-        language: "JavaScript",
-        updated_at: "2026-06-25T10:00:00Z",
-        html_url: "https://github.com"
-    },
-    {
-        name: "kanban-board",
-        description: "Task management board with drag and drop features.",
-        stargazers_count: 15,
-        forks_count: 4,
-        language: "HTML",
-        updated_at: "2026-06-15T10:00:00Z",
-        html_url: "https://github.com"
-    },
-    {
-        name: "quiz-app",
-        description: "Interactive quiz application with score tracking.",
-        stargazers_count: 12,
-        forks_count: 3,
-        language: "CSS",
-        updated_at: "2026-06-13T10:00:00Z",
-        html_url: "https://github.com"
-    },
-    {
-        name: "news-feed-app",
-        description: "News feed aggregator project using async JavaScript.",
-        stargazers_count: 21,
-        forks_count: 7,
-        language: "JavaScript",
-        updated_at: "2026-06-22T10:00:00Z",
-        html_url: "https://github.com"
-    }
-];
+const TOKEN_KEY = "githubAccessToken";
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 
 searchForm.addEventListener("submit", function(event) {
     event.preventDefault();
@@ -98,6 +29,35 @@ searchForm.addEventListener("submit", function(event) {
 sortRepos.addEventListener("change", function() {
     renderRepos(sortRepositoryData(reposData, sortRepos.value));
 });
+
+function getGitHubToken() {
+    let token = sessionStorage.getItem(TOKEN_KEY);
+
+    if (!token) {
+        token = prompt("Enter your GitHub access token for real API data:");
+
+        if (token && token.trim() !== "") {
+            token = token.trim();
+            sessionStorage.setItem(TOKEN_KEY, token);
+        }
+    }
+
+    return token;
+}
+
+function getHeaders() {
+    const token = getGitHubToken();
+
+    const headers = {
+        Accept: "application/vnd.github+json"
+    };
+
+    if (token) {
+        headers.Authorization = `Bearer ${token}`;
+    }
+
+    return headers;
+}
 
 function getCache() {
     const cachedData = localStorage.getItem(CACHE_KEY);
@@ -130,7 +90,6 @@ function saveToCache(username, profileData, reposData) {
 function getFromCache(username) {
     const cache = getCache();
     const key = username.toLowerCase();
-
     const cachedUser = cache[key];
 
     if (!cachedUser) {
@@ -148,18 +107,16 @@ function getFromCache(username) {
     return cachedUser;
 }
 
-function renderDemoData(reason) {
-    reposData = demoReposData;
+function getRateLimitMessage(response) {
+    const resetTime = response.headers.get("x-ratelimit-reset");
 
-    renderProfile(demoProfileData);
-    renderLanguages(reposData);
-    renderRepos(sortRepositoryData(reposData, sortRepos.value));
+    if (resetTime) {
+        const resetDate = new Date(Number(resetTime) * 1000);
 
-    profileSection.classList.remove("hidden");
-    repoSection.classList.remove("hidden");
+        return `GitHub rate limit reached. Try again after ${resetDate.toLocaleTimeString()}.`;
+    }
 
-    messageBox.classList.remove("hidden");
-    messageBox.textContent = reason + " Showing demo data for presentation.";
+    return "GitHub rate limit reached. Please try again later.";
 }
 
 async function fetchDeveloper(username) {
@@ -185,39 +142,54 @@ async function fetchDeveloper(username) {
     }
 
     try {
+        const headers = getHeaders();
+
         const profileResponse = await fetch(
-            `https://api.github.com/users/${username}`
+            `https://api.github.com/users/${username}`,
+            {
+                method: "GET",
+                headers: headers
+            }
         );
 
         if (profileResponse.status === 404) {
-            renderDemoData("Developer not found.");
-            return;
+            throw new Error("Developer not found. Please check the username.");
+        }
+
+        if (profileResponse.status === 401) {
+            sessionStorage.removeItem(TOKEN_KEY);
+            throw new Error("GitHub token is invalid. Please enter a valid token.");
         }
 
         if (profileResponse.status === 403 || profileResponse.status === 429) {
-            renderDemoData("GitHub rate limit reached.");
-            return;
+            throw new Error(getRateLimitMessage(profileResponse));
         }
 
         if (!profileResponse.ok) {
-            renderDemoData("Unable to fetch GitHub profile.");
-            return;
+            throw new Error("Something went wrong while fetching profile data.");
         }
 
         const profileData = await profileResponse.json();
 
         const repoResponse = await fetch(
-            `https://api.github.com/users/${username}/repos?per_page=100&sort=updated`
+            `https://api.github.com/users/${username}/repos?per_page=100&sort=updated`,
+            {
+                method: "GET",
+                headers: headers
+            }
         );
 
+        if (repoResponse.status === 401) {
+            sessionStorage.removeItem(TOKEN_KEY);
+            throw new Error("GitHub token is invalid. Please enter a valid token.");
+        }
+
         if (repoResponse.status === 403 || repoResponse.status === 429) {
-            renderDemoData("GitHub repository rate limit reached.");
-            return;
+            throw new Error(getRateLimitMessage(repoResponse));
         }
 
         if (!repoResponse.ok) {
-            renderDemoData("Unable to fetch GitHub repositories.");
-            return;
+            throw new Error("Something went wrong while fetching repositories.");
         }
 
         reposData = await repoResponse.json();
@@ -232,7 +204,7 @@ async function fetchDeveloper(username) {
         profileSection.classList.remove("hidden");
         repoSection.classList.remove("hidden");
     } catch (error) {
-        renderDemoData("Network issue detected.");
+        showMessage(error.message);
     }
 }
 
@@ -379,7 +351,7 @@ function showLoading() {
 
     messageBox.innerHTML = `
         <div class="loader"></div>
-        <p>Fetching developer data...</p>
+        <p>Fetching real GitHub data...</p>
     `;
 }
 
