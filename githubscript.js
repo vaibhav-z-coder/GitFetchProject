@@ -11,7 +11,76 @@ let reposData = [];
 
 const CACHE_KEY = "githubDeveloperCache";
 const CACHE_DURATION = 6 * 60 * 60 * 1000; 
-// 6 hours cache
+// 6 hours
+
+const demoProfileData = {
+    avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+    login: "demo-developer",
+    name: "Demo Developer",
+    bio: "Frontend Developer | JavaScript | GitHub API Project Demo",
+    public_repos: 6,
+    followers: 120,
+    following: 45,
+    location: "India",
+    html_url: "https://github.com"
+};
+
+const demoReposData = [
+    {
+        name: "portfolio-website",
+        description: "A modern personal portfolio website using HTML, CSS and JavaScript.",
+        stargazers_count: 24,
+        forks_count: 8,
+        language: "JavaScript",
+        updated_at: "2026-06-20T10:00:00Z",
+        html_url: "https://github.com"
+    },
+    {
+        name: "expense-tracker",
+        description: "Expense tracker app with localStorage support.",
+        stargazers_count: 18,
+        forks_count: 5,
+        language: "JavaScript",
+        updated_at: "2026-06-18T10:00:00Z",
+        html_url: "https://github.com"
+    },
+    {
+        name: "github-explorer",
+        description: "A GitHub profile finder using GitHub API.",
+        stargazers_count: 32,
+        forks_count: 11,
+        language: "JavaScript",
+        updated_at: "2026-06-25T10:00:00Z",
+        html_url: "https://github.com"
+    },
+    {
+        name: "kanban-board",
+        description: "Task management board with drag and drop features.",
+        stargazers_count: 15,
+        forks_count: 4,
+        language: "HTML",
+        updated_at: "2026-06-15T10:00:00Z",
+        html_url: "https://github.com"
+    },
+    {
+        name: "quiz-app",
+        description: "Interactive quiz application with score tracking.",
+        stargazers_count: 12,
+        forks_count: 3,
+        language: "CSS",
+        updated_at: "2026-06-13T10:00:00Z",
+        html_url: "https://github.com"
+    },
+    {
+        name: "news-feed-app",
+        description: "News feed aggregator project using async JavaScript.",
+        stargazers_count: 21,
+        forks_count: 7,
+        language: "JavaScript",
+        updated_at: "2026-06-22T10:00:00Z",
+        html_url: "https://github.com"
+    }
+];
 
 searchForm.addEventListener("submit", function(event) {
     event.preventDefault();
@@ -61,6 +130,7 @@ function saveToCache(username, profileData, reposData) {
 function getFromCache(username) {
     const cache = getCache();
     const key = username.toLowerCase();
+
     const cachedUser = cache[key];
 
     if (!cachedUser) {
@@ -78,16 +148,18 @@ function getFromCache(username) {
     return cachedUser;
 }
 
-function getRateLimitMessage(response, defaultMessage) {
-    const resetTime = response.headers.get("x-ratelimit-reset");
+function renderDemoData(reason) {
+    reposData = demoReposData;
 
-    if (resetTime) {
-        const resetDate = new Date(Number(resetTime) * 1000);
+    renderProfile(demoProfileData);
+    renderLanguages(reposData);
+    renderRepos(sortRepositoryData(reposData, sortRepos.value));
 
-        return `GitHub rate limit reached. Try again after ${resetDate.toLocaleTimeString()}.`;
-    }
+    profileSection.classList.remove("hidden");
+    repoSection.classList.remove("hidden");
 
-    return defaultMessage;
+    messageBox.classList.remove("hidden");
+    messageBox.textContent = reason + " Showing demo data for presentation.";
 }
 
 async function fetchDeveloper(username) {
@@ -118,20 +190,18 @@ async function fetchDeveloper(username) {
         );
 
         if (profileResponse.status === 404) {
-            throw new Error("Developer not found. Please check the username.");
+            renderDemoData("Developer not found.");
+            return;
         }
 
         if (profileResponse.status === 403 || profileResponse.status === 429) {
-            throw new Error(
-                getRateLimitMessage(
-                    profileResponse,
-                    "GitHub rate limit reached. Please try again later."
-                )
-            );
+            renderDemoData("GitHub rate limit reached.");
+            return;
         }
 
         if (!profileResponse.ok) {
-            throw new Error("Something went wrong while fetching profile data.");
+            renderDemoData("Unable to fetch GitHub profile.");
+            return;
         }
 
         const profileData = await profileResponse.json();
@@ -141,16 +211,13 @@ async function fetchDeveloper(username) {
         );
 
         if (repoResponse.status === 403 || repoResponse.status === 429) {
-            throw new Error(
-                getRateLimitMessage(
-                    repoResponse,
-                    "GitHub rate limit reached while fetching repositories."
-                )
-            );
+            renderDemoData("GitHub repository rate limit reached.");
+            return;
         }
 
         if (!repoResponse.ok) {
-            throw new Error("Something went wrong while fetching repositories.");
+            renderDemoData("Unable to fetch GitHub repositories.");
+            return;
         }
 
         reposData = await repoResponse.json();
@@ -165,7 +232,7 @@ async function fetchDeveloper(username) {
         profileSection.classList.remove("hidden");
         repoSection.classList.remove("hidden");
     } catch (error) {
-        showMessage(error.message);
+        renderDemoData("Network issue detected.");
     }
 }
 
@@ -178,8 +245,12 @@ function renderProfile(user) {
 
             <div class="profile-info">
                 <h2>${user.name || user.login}</h2>
+
                 <p class="username">@${user.login}</p>
-                <p class="bio">${user.bio || "No bio available for this developer."}</p>
+
+                <p class="bio">
+                    ${user.bio || "No bio available for this developer."}
+                </p>
 
                 <div class="stats">
                     <div class="stat">
@@ -215,11 +286,17 @@ function sortRepositoryData(repos, type) {
     const copiedRepos = [...repos];
 
     if (type === "stars") {
-        copiedRepos.sort((a, b) => b.stargazers_count - a.stargazers_count);
+        copiedRepos.sort(function(a, b) {
+            return b.stargazers_count - a.stargazers_count;
+        });
     } else if (type === "name") {
-        copiedRepos.sort((a, b) => a.name.localeCompare(b.name));
+        copiedRepos.sort(function(a, b) {
+            return a.name.localeCompare(b.name);
+        });
     } else if (type === "updated") {
-        copiedRepos.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+        copiedRepos.sort(function(a, b) {
+            return new Date(b.updated_at) - new Date(a.updated_at);
+        });
     }
 
     return copiedRepos;
@@ -228,44 +305,48 @@ function sortRepositoryData(repos, type) {
 function renderRepos(repos) {
     if (repos.length === 0) {
         repoList.innerHTML = `
-            <div class="message">No public repositories found.</div>
+            <div class="message">
+                No public repositories found.
+            </div>
         `;
         return;
     }
 
-    repoList.innerHTML = repos.map(repo => `
-        <article class="repo-card">
-            <h3>${repo.name}</h3>
+    repoList.innerHTML = repos.map(function(repo) {
+        return `
+            <article class="repo-card">
+                <h3>${repo.name}</h3>
 
-            <p>
-                ${repo.description || "No description added for this repository."}
-            </p>
+                <p>
+                    ${repo.description || "No description added for this repository."}
+                </p>
 
-            <div class="repo-meta">
-                <span>★ ${repo.stargazers_count}</span>
-                <span>⑂ ${repo.forks_count}</span>
-                <span>${repo.language || "Unknown"}</span>
-            </div>
+                <div class="repo-meta">
+                    <span>★ ${repo.stargazers_count}</span>
+                    <span>⑂ ${repo.forks_count}</span>
+                    <span>${repo.language || "Unknown"}</span>
+                </div>
 
-            <a href="${repo.html_url}" target="_blank">
-                View Repository →
-            </a>
-        </article>
-    `).join("");
+                <a href="${repo.html_url}" target="_blank">
+                    View Repository →
+                </a>
+            </article>
+        `;
+    }).join("");
 }
 
 function renderLanguages(repos) {
     const languages = {};
 
-    repos.forEach(repo => {
+    repos.forEach(function(repo) {
         if (repo.language) {
             languages[repo.language] = (languages[repo.language] || 0) + 1;
         }
     });
 
-    const languageEntries = Object.entries(languages).sort(
-        (a, b) => b[1] - a[1]
-    );
+    const languageEntries = Object.entries(languages).sort(function(a, b) {
+        return b[1] - a[1];
+    });
 
     if (languageEntries.length === 0) {
         languageBox.innerHTML = `
@@ -279,15 +360,23 @@ function renderLanguages(repos) {
         <h3>Language Breakdown</h3>
 
         <div class="language-list">
-            ${languageEntries.map(([language, count]) => `
-                <span class="language-pill">${language}: ${count}</span>
-            `).join("")}
+            ${languageEntries.map(function(item) {
+                const language = item[0];
+                const count = item[1];
+
+                return `
+                    <span class="language-pill">
+                        ${language}: ${count}
+                    </span>
+                `;
+            }).join("")}
         </div>
     `;
 }
 
 function showLoading() {
     messageBox.classList.remove("hidden");
+
     messageBox.innerHTML = `
         <div class="loader"></div>
         <p>Fetching developer data...</p>
